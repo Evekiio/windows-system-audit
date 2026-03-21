@@ -84,14 +84,48 @@ After the script finishes you will see a summary like:
 
 ---
 
+## GPU and VRAM note
+
+The `Win32_VideoController` WMI class reports VRAM via a 32-bit property capped at **4 GB (4096 MB)**. If your GPU has more VRAM (e.g. 8 GB, 12 GB, 24 GB), the WMI figure will be wrong. For NVIDIA cards, the script also runs `nvidia-smi` in section 11, which reports the correct VRAM value — use that as the authoritative source.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `Access denied` or script doesn't run | Right-click PowerShell → **Run as Administrator** |
+| `cannot be loaded because running scripts is disabled` | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first, or use the one-liner in **Example run commands** |
+| `nvidia-smi : not found in PATH` | Install NVIDIA drivers and ensure `C:\Windows\System32\DriverStore\FileRepository\…` or the CUDA `bin` folder is in your `PATH` |
+| WSL shows "No (wsl.exe not found)" | Enable WSL via `wsl --install` in an Administrator terminal, then reboot |
+| Disk performance result seems low | The test runs against `%TEMP%` (typically C:). If your workload drive is different, you can edit `$TestFile` in the script to point elsewhere |
+| JSON report contains `null` values | Some hardware (e.g. virtual machines) returns empty WMI fields — this is expected |
+
+---
+
 ## Role recommendation
 
-The script assigns weighted scores for two roles:
+The script assigns weighted scores for two roles and prints a per-factor breakdown in the report:
+
+| Factor | Development points | AI Host points |
+|---|---|---|
+| CPU cores ≥ 8 | +2 | +1 |
+| CPU cores ≥ 4 (but < 8) | +1 | — |
+| Logical processors ≥ 16 | +1 | +1 |
+| RAM ≥ 64 GB | +2 | +3 |
+| RAM ≥ 32 GB (but < 64 GB) | +2 | +2 |
+| RAM ≥ 16 GB (but < 32 GB) | +1 | +1 |
+| NVIDIA GPU detected | — | +4 |
+| `nvidia-smi` available | — | +1 |
+| Free space on C: ≥ 100 GB | +1 | +1 |
+| Disk read speed ≥ 1000 MB/s | — | +2 |
+| Disk read speed ≥ 400 MB/s (but < 1000) | — | +1 |
+| WSL installed | +2 | — |
 
 - **Development** — benefits from many CPU cores, ≥16 GB RAM, WSL, and adequate free storage.
 - **Local AI Agent Hosting** — benefits heavily from an NVIDIA GPU, ≥32 GB RAM, fast NVMe storage, and ample free space.
 
-The recommendation, both scores, and explanatory notes are included in both output files.
+The recommendation, both scores, the per-factor breakdown (`Factors` array), and explanatory notes are included in both output files.
 
 ---
 
