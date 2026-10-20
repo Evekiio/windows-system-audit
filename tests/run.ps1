@@ -30,9 +30,10 @@ function Get-PhysicalDisk {
 
 function Get-Command {
     param([string]$Name)
-    if ($Name -in @('wsl.exe','nvidia-smi.exe','winsat.exe') -and $global:AuditTestMode -eq 'Denied') { return $null }
-    if ($Name -eq 'winsat.exe' -and $global:AuditTestMode -eq 'MissingBenchmark') { return $null }
-    Microsoft.PowerShell.Core\Get-Command $Name -ErrorAction SilentlyContinue
+    $leaf = Split-Path $Name -Leaf
+    if ($leaf -in @('wsl.exe','nvidia-smi.exe','winsat.exe') -and $global:AuditTestMode -eq 'Denied') { return $null }
+    if ($leaf -eq 'winsat.exe' -and $global:AuditTestMode -eq 'MissingBenchmark') { return $null }
+    Microsoft.PowerShell.Core\Get-Command $leaf -ErrorAction SilentlyContinue
 }
 
 function wsl.exe { param([string]$Arg) $global:LASTEXITCODE=0; 'Synthetic WSL status' }
@@ -83,6 +84,9 @@ try {
     Assert-True ($bench.Report.DiskBenchmark.Status -eq 'OK' -and $global:BenchmarkCalls -eq 1) 'Benchmark opt-in failed'
     $missingBench = Invoke-TestAudit 'missing-benchmark' 'MissingBenchmark' -Benchmark
     Assert-True ($missingBench.Report.DiskBenchmark.Status -eq 'Unavailable' -and $global:BenchmarkCalls -eq 1) 'Missing benchmark dependency was not reported'
+    $rejected = $false
+    try { & $scriptPath -OutputDirectory '\\example.invalid\share' | Out-Null } catch { $rejected = $_.Exception.Message -like '*Network and device output paths*' }
+    Assert-True $rejected 'UNC output path was accepted'
     'PASS: synthetic collection, fallback, denied and missing dependencies, privacy, benchmark opt-in, schema'
 } finally {
     if (Test-Path -LiteralPath $testRoot) { Remove-Item -LiteralPath $testRoot -Recurse -Force }
