@@ -83,7 +83,7 @@ JSON is intended for scripts and inventory systems. `SchemaVersion` is currently
 
 Reports stay in the specified local folder. By default, the tool omits computer name, account and domain, serial and part numbers, device IDs, MAC and IP addresses, volume names, running services, and update history. `-IncludeIdentifiers` adds some device and account identifiers; keep those reports private. Review any report before sharing it. Error notes contain exception types rather than raw paths or command error text.
 
-The tool makes no network requests. Its output can still reveal hardware inventory and Windows version, so treat both files as sensitive. The WSL status command and NVIDIA query return local tool output, which should also be reviewed before sharing.
+The tool makes no network requests. Its output can still reveal hardware inventory and Windows version, so treat both files as sensitive. WSL output is reduced to command success or failure; NVIDIA data remains a local tool result and should be reviewed before sharing.
 
 ## Limitations
 
@@ -93,6 +93,15 @@ The tool makes no network requests. Its output can still reveal hardware invento
 - Permissions, missing drivers, and Windows variants can make sections unavailable. Check `Status` and `Note` rather than assuming missing data means missing hardware.
 
 ## Testing
+
+Run the synthetic tests locally (no host inventory is read):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\run.ps1
+pwsh -NoProfile -File .\tests\run.ps1
+```
+
+The tests mock the collectors and optional commands, check success and failure paths, inspect report schema and privacy defaults, and verify that the benchmark is opt-in. The GitHub Actions workflow runs the same tests on Windows; it uploads no reports.
 
 Parse check:
 
