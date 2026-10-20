@@ -26,7 +26,8 @@ function Invoke-OptionalCommand {
     $command = Get-Command $Name -ErrorAction SilentlyContinue
     if (-not $command) { return [pscustomobject]@{ Status = 'Unavailable'; Note = "$Name was not found"; Data = @() } }
     try {
-        $output = @(& $command.Source @Arguments 2>&1 | Out-String).Trim()
+        $global:LASTEXITCODE = 0
+        $output = (& $command @Arguments 2>&1 | Out-String).Trim()
         if ($LASTEXITCODE -ne 0) { return [pscustomobject]@{ Status = 'Unavailable'; Note = "$Name exited with code $LASTEXITCODE"; Data = @() } }
         return [pscustomobject]@{ Status = 'OK'; Note = $null; Data = @($output) }
     } catch {
@@ -86,6 +87,7 @@ $drives = Read-Section 'Drives' {
     }
 }
 $wsl = Invoke-OptionalCommand 'wsl.exe' @('--status')
+if ($wsl.Status -eq 'OK') { $wsl.Data = @('WSL command responded successfully') }
 $nvidia = Invoke-OptionalCommand 'nvidia-smi.exe' @('--query-gpu=name,memory.total,driver_version', '--format=csv,noheader')
 $benchmark = [pscustomobject]@{ Status = 'Skipped'; Note = 'Use -RunDiskBenchmark to opt in'; Data = @() }
 if ($RunDiskBenchmark) { $benchmark = Invoke-OptionalCommand 'winsat.exe' @('disk', '-drive', $env:SystemDrive.TrimEnd(':')) }
@@ -119,7 +121,7 @@ $report = [ordered]@{
 $resolvedDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 [void][IO.Directory]::CreateDirectory($resolvedDirectory)
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMdd_HHmmss_fff')
-$stem = "system_audit_$stamp"
+$stem = "system_audit_${stamp}_$([guid]::NewGuid().ToString('N').Substring(0,8))"
 $jsonPath = Join-Path $resolvedDirectory "$stem.json"
 $textPath = Join-Path $resolvedDirectory "$stem.txt"
 $json = $report | ConvertTo-Json -Depth 8
