@@ -1,277 +1,124 @@
 # Windows System Audit
 
-A simple, local-first PowerShell script that generates a complete system report for a Windows machine.
+**A local, read-only snapshot of a Windows PC.** Generate a text summary and machine-readable JSON for inventory, troubleshooting, and planning. Collection failures appear as `Unavailable` instead of disappearing silently. Hardware guidance describes observed capabilities; it does not claim a machine is ready for a particular AI model or workload.
 
-This project is designed to help you quickly understand hardware capabilities and determine whether a PC is better suited for:
+**[Quick start](#quick-start) | [What it checks](#what-it-checks) | [Options](#options) | [Privacy](#privacy-and-security) | [Limitations](#limitations) | [Testing](#testing)**
 
-- Development / personal use
-- Local AI agent hosting (OpenClaw, Ollama, etc.)
+## Quick start
 
-No external services. No dependencies. Fully local.
-
----
-
-## Purpose
-
-This script collects structured system information and outputs:
-
-1. A human-readable `.txt` report  
-2. A structured `.json` report for automation or ingestion into other systems  
-
-It is specifically useful for:
-
-- Comparing multiple machines  
-- Planning a dual-PC architecture (Control PC + Agent PC)  
-- Validating GPU readiness for local AI workloads  
-- Verifying WSL, NVIDIA, and storage performance  
-
----
-
-## What It Collects
-
-### System
-- Manufacturer  
-- Model  
-- System type  
-- Total physical memory  
-- Current user  
-
-### Operating System
-- Windows version  
-- Build number  
-- Architecture  
-- Install date  
-- Last boot time  
-
-### BIOS & Motherboard
-- BIOS version and release date  
-- Motherboard manufacturer and model  
-
-### CPU
-- Model  
-- Core count  
-- Thread count  
-- Clock speed  
-- Cache sizes  
-
-### Memory (RAM)
-- Total installed RAM  
-- Individual module details  
-- Speed and configuration  
-
-### GPU
-- GPU model(s)  
-- Driver version  
-- VRAM  
-- Status  
-
-### Storage
-- Physical disks (NVMe, SSD, HDD)  
-- Bus type  
-- Capacity  
-- Health status  
-
-### Logical Drives
-- Drive usage  
-- Free space  
-- File system  
-
-### Network
-- Network adapters  
-- Link speed  
-- MAC address  
-
-### WSL (Windows Subsystem for Linux)
-- WSL status  
-- Installed distributions  
-
-### NVIDIA
-- `nvidia-smi` output  
-- GPU readiness for compute workloads  
-
-### Disk Performance
-- Basic WinSAT disk benchmark  
-
-### System State
-- Running services  
-- Recent Windows updates (hotfixes)  
-
-### Role Assessment
-- GPU presence  
-- NVMe presence  
-- RAM size  
-- CPU cores  
-- Simple scoring system  
-- Recommendation:
-  - Agent PC candidate  
-  - Dev / Personal PC candidate  
-
----
-
-## Output Files
-
-The script creates two files on your Desktop (or specified directory):
-
-```
-
-SYSTEMNAME_system_audit_TIMESTAMP.txt
-SYSTEMNAME_system_audit_TIMESTAMP.json
-
-````
-
-### TXT Report
-Human-readable, organized by sections  
-
-### JSON Report
-Structured output for:
-- automation  
-- dashboards  
-- ingestion into your own systems  
-
----
-
-## How to Run
-
-### 1. Open PowerShell as Administrator
-
-### 2. Allow script execution for this session
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-````
-
-### 3. Run the script
+Download or clone this repository, open PowerShell in its directory, and run:
 
 ```powershell
 .\full_system_audit.ps1
 ```
 
-### Optional: Custom output directory
+The script writes `system_audit_<UTC timestamp>_<random suffix>.txt` and `.json` under `Documents\SystemAudit`. It prints both paths. No administrator elevation is required for the default run, though some sections may be unavailable without it. If your execution policy blocks local scripts, follow your organization's policy; a process-scoped policy can be used where permitted:
 
 ```powershell
-.\full_system_audit.ps1 -OutputDirectory "C:\SystemAudit"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\full_system_audit.ps1
 ```
 
----
+Review the script before running it. Do not execute downloaded scripts directly from a URL.
+
+## What it checks
+
+| Section | Data collected by default |
+| --- | --- |
+| System and Windows | Manufacturer, model, installed memory, Windows build, last boot |
+| CPU and memory | Processor name and core counts, memory module capacity and speed |
+| GPU | Adapter name, driver, reported memory and status |
+| Storage | Physical disk type, bus, capacity and reported health; local volume capacity and free space |
+| Optional tools | WSL status and NVIDIA GPU query, when their commands are available |
+| Guidance | Plain-language observations with explicit uncertainty |
+
+Each JSON section has `Status`, `Data`, and `Note`. `Status` is `OK`, `Unavailable`, or `Skipped`. The script falls back to `Win32_DiskDrive` if `Get-PhysicalDisk` is unavailable; fallback media type and health are marked `Unknown`.
+
+## Options
+
+```powershell
+# Save reports elsewhere
+.\full_system_audit.ps1 -OutputDirectory 'C:\Reports\SystemAudit'
+
+# Include host, user, domain, device, volume and serial identifiers
+.\full_system_audit.ps1 -IncludeIdentifiers
+
+# Explicitly run the WinSAT disk test; may require elevation
+.\full_system_audit.ps1 -RunDiskBenchmark
+```
+
+`-RunDiskBenchmark` runs `winsat.exe disk -drive <system drive>`. It can generate substantial disk I/O and is skipped by default. The WSL and NVIDIA checks are read-only command queries. No software is installed and no report is uploaded.
+
+## Example output
+
+The following is **synthetic** and does not describe a real host:
+
+```text
+WINDOWS SYSTEM AUDIT
+Generated (UTC): 2026-01-01T12:00:00.0000000Z
+Identifiers included: False
+
+[CPU] OK
+Name                      : Example Processor
+NumberOfCores             : 8
+NumberOfLogicalProcessors : 16
+
+[DiskBenchmark] Skipped
+  Note: Use -RunDiskBenchmark to opt in
+
+[Guidance]
+Installed memory: 32.0 GiB
+CPU cores: 8
+Interpret these observations against the requirements of your actual workload.
+```
+
+JSON is intended for scripts and inventory systems. `SchemaVersion` is currently `1`; consumers should check each section's `Status` before using `Data`.
 
 ## Requirements
 
-* Windows 10 or Windows 11
-* PowerShell 5.1+ or PowerShell 7+
-* Administrator privileges (recommended)
+- Windows 10 or 11 and Windows PowerShell 5.1 or PowerShell 7.
+- CIM access for the relevant hardware sections. Storage cmdlets may be absent or restricted; fallback collection is attempted.
+- `wsl.exe`, `nvidia-smi.exe`, and `winsat.exe` are optional. Their absence does not stop the audit.
 
-Optional but relevant:
+## Privacy and security
 
-* NVIDIA GPU for AI workloads
-* WSL2 for Linux-based tooling
+Reports are written to a local folder; UNC and mapped network output paths are rejected. Files are created with unique names and will not overwrite existing files. By default, the tool omits computer name, account and domain, serial and part numbers, device IDs, MAC and IP addresses, volume names, running services, and update history. `-IncludeIdentifiers` adds some device and account identifiers; keep those reports private. Review any report before sharing it. Error notes contain exception types rather than raw paths or command error text.
 
----
-
-## How to Use This for Dual-PC Setup
-
-Run the script on both machines and compare:
-
-### Key Decision Factors
-
-| Component | Why It Matters                                 |
-| --------- | ---------------------------------------------- |
-| GPU       | Determines local model size and performance    |
-| RAM       | Controls concurrency and agent stability       |
-| CPU       | Handles orchestration and background workloads |
-| Storage   | Affects load times, indexing, and logging      |
-| NVMe      | Critical for high I/O workloads                |
-| WSL       | Needed for Linux-based tooling                 |
-| NVIDIA    | Required for GPU acceleration                  |
-
----
-
-## Recommended Role Assignment
-
-### Agent PC (Execution Machine)
-
-Should have:
-
-* NVIDIA GPU (working with `nvidia-smi`)
-* 32 GB RAM minimum (64 GB preferred)
-* NVMe SSD
-* 8+ CPU cores
-
-This machine runs:
-
-* OpenClaw
-* Ollama
-* Local LLMs
-* Agent workflows
-* Task execution
-
----
-
-### Dev / Control PC
-
-Should have:
-
-* Stable performance
-* Enough RAM for browser + tools
-* Reliable network connection
-
-This machine handles:
-
-* Dashboard
-* Monitoring
-* Approvals
-* Logs
-* Development
-
----
-
-## Architecture Concept
-
-```
-[ Dev / Control PC ]
-        |
-        |  (LAN only)
-        v
-[ Agent PC ]
-```
-
-* No internet required after setup
-* No direct interaction with Agent PC required
-* Control happens via local API or dashboard
-
----
-
-## Security Considerations
-
-If using the system for autonomous agents:
-
-* Use a dedicated user account on the Agent PC
-* Restrict file system access to a workspace directory
-* Block unnecessary outbound traffic
-* Avoid running agents as Administrator
-* Log all actions locally
-
----
+The script does not make network requests. Folder permissions are inherited, and sync software or redirected folders may copy files elsewhere; choose a private local output folder. The output can reveal hardware inventory and Windows version, so treat both files as sensitive. WSL output is reduced to command success or failure; NVIDIA data remains a local tool result and should be reviewed before sharing. Optional executables are checked only in Windows System32 and, for NVIDIA, the standard NVSMI installation folder; an installation elsewhere is reported as unavailable.
 
 ## Limitations
 
-* WinSAT is a basic benchmark, not a full performance test
-* GPU memory reporting via WMI can be inaccurate on some systems
-* Does not test actual LLM performance
-* Does not validate CUDA or model loading directly
+- WMI GPU `AdapterRAM` can be wrong or capped. NVIDIA query success does not prove CUDA compatibility or model performance.
+- Reported storage health is not a SMART diagnostic. WinSAT is an optional basic disk test, not a full benchmark.
+- Readiness depends on the exact application, model size, memory needs, drivers, thermals, and security requirements. This report does not certify an AI workload.
+- Permissions, missing drivers, and Windows variants can make sections unavailable. Check `Status` and `Note` rather than assuming missing data means missing hardware.
 
----
+## Testing
 
-## Future Improvements (Optional)
+Run the synthetic tests locally (no host inventory is read):
 
-* Add CUDA verification checks
-* Add Ollama health check
-* Add network latency test between machines
-* Add disk IOPS benchmarking
-* Add live monitoring mode
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\run.ps1
+pwsh -NoProfile -File .\tests\run.ps1
+```
 
----
+The tests mock the collectors and optional commands, check success and failure paths, inspect report schema and privacy defaults, and verify that the benchmark is opt-in. The GitHub Actions workflow runs the same tests on Windows; it uploads no reports.
+
+Parse check:
+
+```powershell
+$tokens = $errors = $null
+[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path .\full_system_audit.ps1), [ref]$tokens, [ref]$errors) | Out-Null
+if ($errors) { $errors | Format-List; throw 'Parse failed' }
+```
+
+Smoke test locally with a private temporary output folder:
+
+```powershell
+.\full_system_audit.ps1 -OutputDirectory (Join-Path $env:TEMP 'system-audit-check')
+```
+
+Inspect the generated JSON for the expected `SchemaVersion` and section statuses. Do not commit generated reports. The benchmark option is intentionally excluded from the smoke test.
 
 ## License
 
-MIT License
-
+[MIT](LICENSE)
