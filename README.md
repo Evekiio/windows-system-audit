@@ -12,7 +12,7 @@ Download or clone this repository, open PowerShell in its directory, and run:
 .\full_system_audit.ps1
 ```
 
-The script writes `system_audit_<UTC timestamp>.txt` and `.json` under `Documents\SystemAudit`. It prints both paths. No administrator elevation is required for the default run, though some sections may be unavailable without it. If your execution policy blocks local scripts, follow your organization's policy; a process-scoped policy can be used where permitted:
+The script writes `system_audit_<UTC timestamp>_<random suffix>.txt` and `.json` under `Documents\SystemAudit`. It prints both paths. No administrator elevation is required for the default run, though some sections may be unavailable without it. If your execution policy blocks local scripts, follow your organization's policy; a process-scoped policy can be used where permitted:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\full_system_audit.ps1
