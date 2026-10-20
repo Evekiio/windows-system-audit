@@ -1,6 +1,8 @@
+![Windows System Audit: original workstation and report artwork for local PowerShell machine inspection.](assets/repository-banner.svg)
+
 # Windows System Audit
 
-A simple, local-first PowerShell script that generates a complete system report for a Windows machine.
+A simple, local-first PowerShell script that generates a structured system report for a Windows machine.
 
 This project is designed to help you quickly understand hardware capabilities and determine whether a PC is better suited for:
 
@@ -10,6 +12,11 @@ This project is designed to help you quickly understand hardware capabilities an
 No external services. No dependencies. Fully local.
 
 ---
+
+> [!NOTE]
+> **A machine-planning utility, not a security assessment.** It collects local system information and uses simple role-scoring heuristics. It does not measure actual language-model performance or certify that a machine is ready for deployment.
+
+[Run the script](#how-to-run) · [Collected fields](#what-it-collects) · [Report formats](#output-files) · [Compare PCs](#how-to-use-this-for-dual-pc-setup) · [Privacy](#security-considerations) · [Limits](#limitations)
 
 ## Purpose
 
@@ -28,6 +35,12 @@ It is specifically useful for:
 ---
 
 ## What It Collects
+
+The report covers hardware, operating system, storage, networking, development tools and a simple suggested role. Expand the inventory below for individual fields.
+
+<details>
+<summary><strong>Full collection inventory</strong></summary>
+
 
 ### System
 - Manufacturer  
@@ -108,16 +121,18 @@ It is specifically useful for:
 
 ---
 
+</details>
+
 ## Output Files
 
-The script creates two files on your Desktop (or specified directory):
+The script creates two files in `Desktop\SystemAudit` by default (or the specified directory):
 
 ```
 
 SYSTEMNAME_system_audit_TIMESTAMP.txt
 SYSTEMNAME_system_audit_TIMESTAMP.json
 
-````
+```
 
 ### TXT Report
 Human-readable, organized by sections  
@@ -138,7 +153,7 @@ Structured output for:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
-````
+```
 
 ### 3. Run the script
 
@@ -224,7 +239,9 @@ This machine handles:
 
 ---
 
-## Architecture Concept
+## Optional dual-PC architecture concept
+
+The following is a possible environment to plan with the report. The audit script does not install an agent, API, dashboard or network connection.
 
 ```
 [ Dev / Control PC ]
@@ -241,6 +258,8 @@ This machine handles:
 ---
 
 ## Security Considerations
+
+**The reports can contain sensitive machine details**, including the current user, system name, MAC addresses, service inventory and configuration. Collection stays local; review and redact the TXT and JSON files before sharing them or committing anything to Git. Local storage is not encryption or automatic redaction.
 
 If using the system for autonomous agents:
 
@@ -273,5 +292,4 @@ If using the system for autonomous agents:
 
 ## License
 
-MIT License
-
+MIT License. See [LICENSE](LICENSE).
