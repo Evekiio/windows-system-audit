@@ -10,6 +10,13 @@ $ErrorActionPreference = 'Stop'
 
 if ($env:OS -ne 'Windows_NT') { throw 'This tool requires Windows.' }
 
+$resolvedDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+if ($resolvedDirectory.StartsWith('\\')) { throw 'Network and device output paths are not supported.' }
+$driveRoot = [IO.Path]::GetPathRoot($resolvedDirectory)
+if ($driveRoot -and ([IO.DriveInfo]::new($driveRoot)).DriveType -eq [IO.DriveType]::Network) {
+    throw 'Network output drives are not supported.'
+}
+
 function Read-Section {
     param([string]$Name, [scriptblock]$Action)
     try {
@@ -23,8 +30,17 @@ function Read-Section {
 
 function Invoke-OptionalCommand {
     param([string]$Name, [string[]]$Arguments)
-    $command = Get-Command $Name -ErrorAction SilentlyContinue
-    if (-not $command) { return [pscustomobject]@{ Status = 'Unavailable'; Note = "$Name was not found"; Data = @() } }
+    $candidates = @()
+    if ($env:WINDIR) { $candidates += (Join-Path $env:WINDIR "System32\$Name") }
+    if ($Name -eq 'nvidia-smi.exe' -and $env:ProgramFiles) {
+        $candidates += (Join-Path $env:ProgramFiles 'NVIDIA Corporation\NVSMI\nvidia-smi.exe')
+    }
+    $command = $null
+    foreach ($candidate in $candidates) {
+        $command = Get-Command $candidate -CommandType Application -ErrorAction SilentlyContinue
+        if ($command) { break }
+    }
+    if (-not $command) { return [pscustomobject]@{ Status = 'Unavailable'; Note = "$Name was not found in a supported installation path"; Data = @() } }
     try {
         $global:LASTEXITCODE = 0
         $output = (& $command @Arguments 2>&1 | Out-String).Trim()
@@ -118,7 +134,6 @@ $report = [ordered]@{
     Guidance = $observations
 }
 
-$resolvedDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 [void][IO.Directory]::CreateDirectory($resolvedDirectory)
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMdd_HHmmss_fff')
 $stem = "system_audit_${stamp}_$([guid]::NewGuid().ToString('N').Substring(0,8))"
@@ -136,7 +151,29 @@ foreach ($name in @('System','OperatingSystem','CPU','Memory','GPU','Storage','D
 $lines += '[Guidance]'
 $lines += $observations
 $lines += 'Interpret these observations against the requirements of your actual workload.'
-[IO.File]::WriteAllText($jsonPath, $json, [Text.UTF8Encoding]::new($false))
-[IO.File]::WriteAllLines($textPath, [string[]]$lines, [Text.UTF8Encoding]::new($false))
+function Write-NewReportFile {
+    param([string]$Path, [string]$Content)
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+    try {
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes($Content)
+        $stream.Write($bytes, 0, $bytes.Length)
+    } catch {
+        $stream.Dispose()
+        [IO.File]::Delete($Path)
+        throw
+    } finally {
+        $stream.Dispose()
+    }
+}
+$createdReports = @()
+try {
+    Write-NewReportFile $textPath (($lines -join [Environment]::NewLine) + [Environment]::NewLine)
+    $createdReports += $textPath
+    Write-NewReportFile $jsonPath $json
+    $createdReports += $jsonPath
+} catch {
+    foreach ($createdReport in $createdReports) { [IO.File]::Delete($createdReport) }
+    throw
+}
 Write-Output "Text report: $textPath"
 Write-Output "JSON report: $jsonPath"
