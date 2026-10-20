@@ -2,7 +2,7 @@
 
 **A local, read-only snapshot of a Windows PC.** Generate a text summary and machine-readable JSON for inventory, troubleshooting, and planning. Collection failures appear as `Unavailable` instead of disappearing silently. Hardware guidance describes observed capabilities; it does not claim a machine is ready for a particular AI model or workload.
 
-**[Quick start](#quick-start) � [What it checks](#what-it-checks) � [Options](#options) � [Privacy](#privacy-and-security) � [Limitations](#limitations) � [Testing](#testing)**
+**[Quick start](#quick-start) | [What it checks](#what-it-checks) | [Options](#options) | [Privacy](#privacy-and-security) | [Limitations](#limitations) | [Testing](#testing)**
 
 ## Quick start
 
