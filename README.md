@@ -81,9 +81,9 @@ JSON is intended for scripts and inventory systems. `SchemaVersion` is currently
 
 ## Privacy and security
 
-Reports stay in the specified local folder. By default, the tool omits computer name, account and domain, serial and part numbers, device IDs, MAC and IP addresses, volume names, running services, and update history. `-IncludeIdentifiers` adds some device and account identifiers; keep those reports private. Review any report before sharing it. Error notes contain exception types rather than raw paths or command error text.
+Reports are written to a local folder; UNC and mapped network output paths are rejected. Files are created with unique names and will not overwrite existing files. By default, the tool omits computer name, account and domain, serial and part numbers, device IDs, MAC and IP addresses, volume names, running services, and update history. `-IncludeIdentifiers` adds some device and account identifiers; keep those reports private. Review any report before sharing it. Error notes contain exception types rather than raw paths or command error text.
 
-The tool makes no network requests. Its output can still reveal hardware inventory and Windows version, so treat both files as sensitive. WSL output is reduced to command success or failure; NVIDIA data remains a local tool result and should be reviewed before sharing.
+The script does not make network requests. Folder permissions are inherited, and sync software or redirected folders may copy files elsewhere; choose a private local output folder. The output can reveal hardware inventory and Windows version, so treat both files as sensitive. WSL output is reduced to command success or failure; NVIDIA data remains a local tool result and should be reviewed before sharing. Optional executables are checked only in Windows System32 and, for NVIDIA, the standard NVSMI installation folder; an installation elsewhere is reported as unavailable.
 
 ## Limitations
 
