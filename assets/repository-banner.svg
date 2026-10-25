@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" role="img" aria-labelledby="title desc">
+<title id="title">Windows System Audit</title>
+<desc id="desc">Know the machine before choosing its next role.. Local PowerShell · Text + JSON reports · No external services. Original abstract artwork for windows-system-audit, not a product screenshot.</desc>
+<rect width="1280" height="360" rx="16" fill="#10263b"/>
+<g transform="translate(867 50)" fill="none" stroke-width="2"><rect x="0" y="0" width="276" height="190" rx="12" fill="#1c3a53" stroke="#72ccf0"/><path d="M108 190V222M166 190V222M71 224H204" stroke="#72ccf0" stroke-width="4"/><path d="M24 64H91M24 91H119M24 118H82M24 145H108" stroke="#8bb7d2"/><path d="M146 143L170 108L190 127L222 66L252 84" stroke="#72ccf0" stroke-width="4"/><rect x="168" y="215" width="109" height="58" rx="8" fill="#1c3a53" stroke="#72ccf0"/><path d="M188 229L180 243L188 257M253 229L261 243L253 257M229 229L215 257" stroke="#d5efff"/></g>
+<g font-family="Arial, Helvetica, sans-serif" fill="#f2f8ff">
+<text x="56" y="68" font-size="17" font-weight="700" letter-spacing="3" fill="#72ccf0">INSPECT / COMPARE / PLAN</text>
+<text x="52" y="151" font-size="58" font-weight="700" letter-spacing="-2">Windows System Audit</text>
+<text x="56" y="202" font-size="24" fill="#b6d0e5">Know the machine before choosing its next role.</text>
+<path d="M56 249H118" stroke="#72ccf0" stroke-width="4"/>
+<text x="56" y="302" font-size="17" fill="#b6d0e5">Local PowerShell · Text + JSON reports · No external services</text>
+</g></svg>
