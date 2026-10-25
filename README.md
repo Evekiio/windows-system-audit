@@ -96,6 +96,8 @@ The script does not make network requests. Folder permissions are inherited, and
 
 ## Testing
 
+Run these checks locally and record their results in the PR. Automatic Actions validation is intentionally omitted; retain the synthetic privacy, output-path and failure-handling tests. Do not bypass local execution policy or perform live hardware/benchmark probes without their separate authorization.
+
 Run the synthetic tests locally (no host inventory is read):
 
 ```powershell
